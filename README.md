@@ -1,104 +1,40 @@
-# NanoStack API
+# NanoStack
 
-Permissionless cross-chain execution across 59 chains. 8-15 bps fees. Real-time signal data with cryptographic proofs.
+Permissionless cross-chain execution. Native assets. No wrapping. No SDK.
 
 **Base URL:** `https://api.nano-labs.io`
 
-## Quick Start
-
-Get a fee quote on any chain:
-
 ```bash
-curl -X POST https://api.nano-labs.io/v1/quote \
+# 1. Get a quote
+curl -s -X POST https://api.nano-labs.io/v1/quote \
   -H "Content-Type: application/json" \
-  -d '{"chain_id": 8453, "amount": "1000000", "destination": "0xYourAddress"}'
+  -d '{"chain_id": 8453, "amount": "1000000000000000000", "destination": "0xYourAddress"}'
+
+# 2. Execute
+curl -s -X POST https://api.nano-labs.io/v1/execute \
+  -H "Content-Type: application/json" \
+  -d '{"chain_id": 8453, "amount": "1000000000000000000", "destination": "0xYourAddress"}'
+
+# Cross-chain: Cosmos → ETH
+curl -s -X POST https://api.nano-labs.io/v1/cross-chain \
+  -H "Content-Type: application/json" \
+  -d '{"src_chain_id": 118, "dst_chain_id": 1, "amount": "1000000", "denom": "uatom", "destination": "0xYourAddress"}'
 ```
 
-Get real-time signal data:
-
-```bash
-curl https://api.nano-labs.io/v1/signal/atoms?n=10
-```
-
-No API key required. No registration. Fully permissionless.
+No API key. No registration. No SDK.
 
 ## Endpoints
 
-### Execution
-
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/v1/quote` | Fee quote for any chain. 8-15 bps tiered. 30s validity. |
-| POST | `/v1/execute` | Execute on any chain. Fee deducted from amount. |
-| POST | `/v1/cross-chain` | Cross-chain execution (permissionless) |
-| POST | `/v1/register` | Self-service API key (optional, for attribution) |
-
-### Signal Data
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/v1/signal/atoms?n=50` | Latest N signal atoms — real-time price deviations, entropy scores |
-| GET | `/v1/signal/summary?n=1000` | Aggregate stats: mean/median/p95 deviation, chain coverage |
-| GET | `/v1/signal/root` | Rolling BLAKE3 Merkle root of all signal atoms |
-
-### Bot Integration
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/v1/bots/schema` | Full typed schema — every field with type, format, constraints |
-| GET | `/v1/bots/ecosystems` | 6 ecosystem configs with chain lists, address formats, gas models |
-| GET | `/v1/bots/pairs` | 50 tradeable pairs across all ecosystems |
-| GET | `/v1/bots/signals` | Signal endpoint discovery map |
-| GET | `/v1/bots/capabilities` | Protocol capabilities |
-
-### Discovery
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/.well-known/openapi.json` | OpenAPI 3.0 specification |
-| GET | `/.well-known/nanoport.json` | Protocol discovery document |
-| GET | `/.well-known/ai-plugin.json` | AI/LLM plugin manifest |
-| GET | `/apis.json` | API directory manifest |
-
-## Supported Chains (59)
-
-### EVM (40 chains)
-
-Ethereum (1), Base (8453), Arbitrum (42161), Optimism (10), Polygon (137), BNB Chain (56), Avalanche (43114), Scroll (534352), zkSync Era (324), Linea (59144), Blast (81457), Mantle (5000), Mode (34443), Taiko (167000), Manta Pacific (169), Fraxtal (252), Ink (57073), Zora (7777777), Unichain (130), World Chain (480), Xai (660279), X Layer (196), Gnosis (100), Fantom (250), Sei (1329), Celo (42220), Cronos (25), Moonbeam (1284), Astar (592), Aurora (1313161554), Kava (2222), Metis (1088), Boba (288), Harmony (1666600000), Degen (666666666), Filecoin (314), Hedera (295), Ronin (2020), Arbitrum Nova (42170), Polygon zkEVM (1101)
-
-### Non-EVM (19 chains)
-
-Bitcoin (UTXO), Solana, Cosmos Hub, Aptos (Move), Sui (Move), NEAR, TON, Cardano, Polkadot, Algorand, Axelar, Flow, ICP, TRON, Stellar, Tezos, XRP Ledger
-
-### Sovereign
-
-SubZero 2477 — conservation-enforced settlement chain
-
-## Signal Atom Schema
-
-Each signal atom is a 64-byte cache-line-aligned binary structure:
-
-```json
-{
-  "hash": {"type": "string", "format": "hex", "length": 64, "description": "BLAKE3 commitment"},
-  "seq": {"type": "u64", "description": "monotonic sequence number"},
-  "ecosystem": {"type": "u16", "enum": {"0": "evm", "1": "solana", "2": "cosmos", "3": "utxo", "4": "xrpl", "5": "move"}},
-  "tier": {"type": "u16", "description": "signal tier"},
-  "pair": {"type": "u16", "resolve": "/v1/bots/pairs"},
-  "flags": {"type": "u16", "description": "bitfield"},
-  "deviation_bps": {"type": "i32", "description": "signed basis points from reference price"},
-  "entropy_score": {"type": "u32", "description": "full u32 range"},
-  "venue": {"type": "string", "description": "source venue"},
-  "price": {"type": "string", "format": "decimal", "description": "observed price"},
-  "reference_price": {"type": "string", "format": "decimal", "description": "reference price"},
-  "spread_bps": {"type": "i32", "description": "bid-ask spread in basis points"},
-  "liquidity_usd": {"type": "u64", "description": "estimated depth in USD"},
-  "base_token": {"type": "string", "description": "base token symbol"},
-  "quote_token": {"type": "string", "description": "quote token symbol"},
-  "chain_id": {"type": "u64", "description": "chain identifier"},
-  "timestamp_ns": {"type": "u64", "format": "nanoseconds", "description": "unix nanosecond timestamp"}
-}
-```
+| POST | `/v1/quote` | Fee quote. 8-15 bps, locked 30s. |
+| POST | `/v1/execute` | Execute. Fee deducted from amount. |
+| POST | `/v1/cross-chain` | Cross-chain execution. src + dst + amount. |
+| POST | `/v1/register` | Optional API key (attribution + higher limits). |
+| GET | `/v1/health` | Liveness. Returns `{"ok":true}`. |
+| GET | `/v1/status` | Protocol stats and execution counters. |
+| GET | `/v1/signal` | Real-time signal data. |
+| GET | `/.well-known/nanostack.json` | Full manifest: chains, schemas, fee model. |
 
 ## Quote Request
 
@@ -106,131 +42,103 @@ Each signal atom is a 64-byte cache-line-aligned binary structure:
 {
   "chain_id": 8453,
   "amount": "1000000000000000000",
-  "destination": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18",
-  "source": "0xSenderAddress",
-  "intent": "execute"
+  "destination": "0xYourAddress"
 }
 ```
 
-### Fields
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `chain_id` | u64 | yes | Target chain ID |
-| `amount` | string | yes | Amount in smallest unit (wei, satoshi, lamport) |
-| `destination` | string | yes | Chain-native destination address |
-| `source` | string | no | Source address |
-| `intent` | string | no | `execute` (default) or `quote` |
-| `quote_id` | string | no | Lock a prior quote for execution |
-
-### Ecosystem-Specific Fields
-
-**EVM**: `token_address` (0x hex ERC20), `gas_priority` (low/medium/high)
-
-**Solana**: `token_mint` (base58 SPL mint), `priority_fee_lamports` (u64)
-
-**Cosmos**: `denom` (e.g. uatom), `memo` (critical for exchanges)
-
-**UTXO**: `fee_rate` (sat/vbyte), `change_address`
-
-**XRPL**: `destination_tag` (u32, critical for exchanges), `currency`
-
-**Move**: `coin_type` (fully qualified type)
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `chain_id` | u64 | yes | See chain list below |
+| `amount` | string | yes | Smallest unit (wei / satoshi / lamport / uatom / drops) |
+| `destination` | string | yes | Chain-native address |
+| `source` | string | no | |
+| `token_address` | string | no | EVM ERC20 only |
+| `token_mint` | string | no | Solana SPL only |
+| `denom` | string | no | Cosmos only (e.g. `uatom`) |
+| `memo` | string | no | Cosmos — critical for exchange deposits |
+| `destination_tag` | u32 | no | XRP — critical for exchange deposits |
+| `fee_rate` | u64 | no | BTC sat/vbyte |
+| `coin_type` | string | no | Move (APT/SUI) full type path |
 
 ## Fee Model
 
-- **Base fee**: 10 bps (0.10%)
-- **Range**: 8-15 bps depending on amount
-- **Size discount**: >$10K amount: -1 bps, >$100K: -2 bps
-- **Minimum fee**: 8 bps
-- **Maximum fee**: 15 bps
-- Fee is deducted from the execution amount
-- Fee locked at quote time, valid for 30 seconds
+- **Base**: 10 bps (0.10%)
+- **Range**: 8–15 bps based on amount
+- **Locked**: at quote time, valid 30 seconds
+- **Deducted**: from execution amount
+- **Permissionless**: no key required
 
-## Examples
+## Supported Chains (46)
 
-### Python
+### EVM (40)
 
-```python
-import urllib.request, json
+| Chain | ID | Native |
+|-------|----|--------|
+| Ethereum | 1 | ETH |
+| Base | 8453 | ETH |
+| Arbitrum | 42161 | ETH |
+| Optimism | 10 | ETH |
+| Polygon | 137 | MATIC |
+| BNB Chain | 56 | BNB |
+| Avalanche | 43114 | AVAX |
+| Fantom | 250 | FTM |
+| Scroll | 534352 | ETH |
+| zkSync Era | 324 | ETH |
+| Linea | 59144 | ETH |
+| Blast | 81457 | ETH |
+| Mantle | 5000 | MNT |
+| Mode | 34443 | ETH |
+| Taiko | 167000 | ETH |
+| Manta Pacific | 169 | ETH |
+| Fraxtal | 252 | frxETH |
+| Ink | 57073 | ETH |
+| Zora | 7777777 | ETH |
+| Unichain | 130 | ETH |
+| World Chain | 480 | ETH |
+| Xai | 660279 | XAI |
+| X Layer | 196 | OKB |
+| Gnosis | 100 | xDAI |
+| Sei | 1329 | SEI |
+| Celo | 42220 | CELO |
+| Cronos | 25 | CRO |
+| Moonbeam | 1284 | GLMR |
+| Astar | 592 | ASTR |
+| Aurora | 1313161554 | ETH |
+| Kava | 2222 | KAVA |
+| Metis | 1088 | METIS |
+| Boba | 288 | ETH |
+| Harmony | 1666600000 | ONE |
+| Degen | 666666666 | DEGEN |
+| Filecoin | 314 | FIL |
+| Hedera EVM | 295 | HBAR |
+| Ronin | 2020 | RON |
+| Arbitrum Nova | 42170 | ETH |
+| Polygon zkEVM | 1101 | ETH |
 
-# Get signal atoms
-req = urllib.request.urlopen("https://api.nano-labs.io/v1/signal/atoms?n=5")
-atoms = json.loads(req.read())
-for atom in atoms["atoms"]:
-    print(f"seq={atom['seq']} pair={atom['pair']} dev={atom['deviation_bps']}bps")
+### Non-EVM (6)
 
-# Get a quote
-data = json.dumps({"chain_id": 8453, "amount": "1000000", "destination": "0x..."}).encode()
-req = urllib.request.Request("https://api.nano-labs.io/v1/quote",
-                              data=data,
-                              headers={"Content-Type": "application/json"})
-quote = json.loads(urllib.request.urlopen(req).read())
-print(f"fee: {quote['fee_bps']} bps, quote_id: {quote['quote_id']}")
-```
+| Chain | ID | Native | Signing |
+|-------|----|--------|---------|
+| Bitcoin | 0 | BTC | secp256k1, P2WPKH, RBF |
+| Solana | 501 | SOL | ed25519 |
+| Cosmos Hub | 118 | ATOM | secp256k1, amino/proto |
+| XRP Ledger | 144 | XRP | secp256k1 |
+| Aptos | 637 | APT | ed25519 (Move) |
+| Sui | 784 | SUI | ed25519 (Move) |
 
-### Rust
+## Discovery
 
-```rust
-use std::io::Read;
-use std::net::TcpStream;
-use std::io::Write;
-
-fn get_signal_atoms() -> String {
-    let mut stream = TcpStream::connect("api.nano-labs.io:443").unwrap();
-    // ... TLS handshake, HTTP GET /v1/signal/atoms?n=5
-    // Returns JSON array of signal atoms
-    todo!()
-}
-```
-
-### curl
+Machine-readable manifest with all chain IDs, fee model, address formats, and request schemas:
 
 ```bash
-# Signal atoms (latest 10)
-curl -s https://api.nano-labs.io/v1/signal/atoms?n=10 | python3 -m json.tool
-
-# Signal summary
-curl -s https://api.nano-labs.io/v1/signal/summary?n=1000 | python3 -m json.tool
-
-# Full schema
-curl -s https://api.nano-labs.io/v1/bots/schema | python3 -m json.tool
-
-# Ecosystem configs
-curl -s https://api.nano-labs.io/v1/bots/ecosystems | python3 -m json.tool
-
-# Trading pairs
-curl -s https://api.nano-labs.io/v1/bots/pairs | python3 -m json.tool
-
-# Fee quote
-curl -X POST https://api.nano-labs.io/v1/quote \
-  -H "Content-Type: application/json" \
-  -d '{"chain_id": 1, "amount": "10000000000000000", "destination": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18"}'
-
-# Health check
-curl -s https://api.nano-labs.io/health
+curl -s https://api.nano-labs.io/.well-known/nanostack.json | python3 -m json.tool
 ```
 
-## Conservation Invariant
+## Conservation
 
-All execution enforces: `gross == net + fee`
+Every execution enforces: `gross == net + fee`
 
-This is verified at every layer — from the execution engine through settlement on SubZero 2477. Signal atoms include cryptographic commitments (BLAKE3 hashes) that can be verified against the rolling Merkle root at `/v1/signal/root`.
-
-## Rate Limits
-
-- Signal endpoints: 100 req/s (unauthenticated)
-- Quote: 10 req/s per IP
-- Execute: 5 req/s per IP
-- Bot schema: 10 req/s (cached)
-
-## Links
-
-- [OpenAPI Spec](https://api.nano-labs.io/.well-known/openapi.json)
-- [Discovery Document](https://api.nano-labs.io/.well-known/nanoport.json)
-- [AI Plugin Manifest](https://api.nano-labs.io/.well-known/ai-plugin.json)
-- [Signal Atoms (live)](https://api.nano-labs.io/v1/signal/atoms?n=10)
-- [Bot Schema](https://api.nano-labs.io/v1/bots/schema)
+Proven via BLAKE3 on SubZero ledger 2477. No execution settles without a valid conservation proof.
 
 ## License
 
