@@ -1,0 +1,242 @@
+{
+  "info": {
+    "name": "NanoStack API",
+    "description": "Permissionless cross-chain execution across 59 chains. 8-15 bps fees. Real-time signal data with BLAKE3 cryptographic proofs.\n\nBase URL: https://api.nano-labs.io\n\nNo API key required. Fully permissionless.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "nanostack"
+  },
+  "item": [
+    {
+      "name": "Execution",
+      "item": [
+        {
+          "name": "Get Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chain_id\": 8453,\n  \"amount\": \"1000000000000000000\",\n  \"destination\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18\"\n}"
+            },
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/quote",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "quote"]
+            },
+            "description": "Get a fee quote for execution on any of 59 chains. 8-15 bps tiered fees. Quote valid for 30 seconds."
+          }
+        },
+        {
+          "name": "Execute",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chain_id\": 8453,\n  \"amount\": \"1000000000000000000\",\n  \"destination\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18\",\n  \"quote_id\": \"QUOTE_ID_FROM_ABOVE\"\n}"
+            },
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/execute",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "execute"]
+            },
+            "description": "Execute on any chain. Fee deducted from amount. Permissionless."
+          }
+        },
+        {
+          "name": "Cross-Chain Execute",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chain_id\": 8453,\n  \"amount\": \"1000000000000000000\",\n  \"destination\": \"0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18\"\n}"
+            },
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/cross-chain",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "cross-chain"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Signal Data",
+      "item": [
+        {
+          "name": "Signal Atoms",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/signal/atoms?n=10",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "signal", "atoms"],
+              "query": [{"key": "n", "value": "10"}]
+            },
+            "description": "Latest N signal atoms. Each atom: BLAKE3 hash, seq, ecosystem, deviation_bps, entropy_score, venue, prices."
+          }
+        },
+        {
+          "name": "Signal Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/signal/summary?n=1000",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "signal", "summary"],
+              "query": [{"key": "n", "value": "1000"}]
+            },
+            "description": "Aggregate stats: mean/median/p95 deviation, entropy distribution, chain coverage."
+          }
+        },
+        {
+          "name": "Merkle Root",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/signal/root",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "signal", "root"]
+            },
+            "description": "Current rolling BLAKE3 Merkle root of all signal atoms."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bot Integration",
+      "item": [
+        {
+          "name": "Full Schema",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/bots/schema",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "bots", "schema"]
+            },
+            "description": "Complete typed schema with every field: type, format, constraints, description."
+          }
+        },
+        {
+          "name": "Ecosystems",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/bots/ecosystems",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "bots", "ecosystems"]
+            },
+            "description": "6 ecosystems with chain lists, address formats, gas models, signing algorithms."
+          }
+        },
+        {
+          "name": "Trading Pairs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/bots/pairs",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "bots", "pairs"]
+            },
+            "description": "50 tradeable pairs across all ecosystems."
+          }
+        },
+        {
+          "name": "Signal Endpoints",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/bots/signals",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "bots", "signals"]
+            },
+            "description": "Endpoint discovery map for automated consumers."
+          }
+        },
+        {
+          "name": "Capabilities",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/v1/bots/capabilities",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["v1", "bots", "capabilities"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Discovery",
+      "item": [
+        {
+          "name": "OpenAPI Spec",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/.well-known/openapi.json",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": [".well-known", "openapi.json"]
+            }
+          }
+        },
+        {
+          "name": "Discovery Document",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/.well-known/nanoport.json",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": [".well-known", "nanoport.json"]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/health",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Supported Tokens",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://api.nano-labs.io/tokens",
+              "protocol": "https",
+              "host": ["api", "nano-labs", "io"],
+              "path": ["tokens"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
