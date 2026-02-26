@@ -1,399 +1,161 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.0.3",
   "info": {
     "title": "NanoStack Execution API",
     "version": "1.0.0",
-    "description": "Permissionless cross-chain execution across 59 chains. 8-15 bps fees. Real-time signal data with BLAKE3 cryptographic proofs. Conservation-enforced settlement on sovereign chain 2477.",
-    "contact": {
-      "name": "NanoStack",
-      "url": "https://github.com/nano-labs-io/nanostack-api"
-    },
-    "license": {
-      "name": "MIT",
-      "url": "https://opensource.org/licenses/MIT"
-    }
+    "description": "Permissionless cross-chain execution. Native assets. No wrapping. No SDK. 8-15 bps.",
+    "contact": { "url": "https://github.com/nano-labs-io/nanostack-api" },
+    "license": { "name": "MIT" }
   },
-  "servers": [
-    {
-      "url": "https://api.nano-labs.io",
-      "description": "Production"
-    }
-  ],
-  "tags": [
-    {"name": "Execution", "description": "Quote and execute across 59 chains"},
-    {"name": "Signals", "description": "Real-time signal atoms, summaries, and Merkle proofs"},
-    {"name": "Bot Integration", "description": "Machine-readable schemas for automated consumers"},
-    {"name": "Discovery", "description": "Protocol and API discovery endpoints"},
-    {"name": "Telemetry", "description": "Telemetry frames and settlement proofs"}
-  ],
+  "servers": [{ "url": "https://api.nano-labs.io" }],
   "paths": {
     "/v1/quote": {
       "post": {
-        "tags": ["Execution"],
         "summary": "Get a fee quote",
-        "description": "Returns a fee quote for execution on any of 59 chains. 8-15 bps tiered fees. Quote valid for 30 seconds. Permissionless — no API key required.",
+        "description": "Returns a fee quote for any of 46 chains. 8-15 bps, locked 30 seconds. Permissionless.",
+        "tags": ["Execution"],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"$ref": "#/components/schemas/QuoteRequest"},
-              "example": {
-                "chain_id": 8453,
-                "amount": "1000000000000000000",
-                "destination": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18"
-              }
+              "schema": { "$ref": "#/components/schemas/QuoteRequest" },
+              "example": { "chain_id": 8453, "amount": "1000000000000000000", "destination": "0xYourAddress" }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Fee quote",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/QuoteResponse"}
-              }
-            }
-          }
+          "200": { "description": "Fee quote", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QuoteResponse" } } } },
+          "400": { "description": "Invalid request" }
         }
       }
     },
     "/v1/execute": {
       "post": {
-        "tags": ["Execution"],
         "summary": "Execute on any chain",
-        "description": "Permissionless execution. Fee auto-deducted from amount. Settles on sovereign chain 2477. Conservation invariant enforced: gross == net + fee.",
+        "description": "Permissionless execution. Fee auto-deducted. Conservation invariant: gross == net + fee.",
+        "tags": ["Execution"],
         "requestBody": {
           "required": true,
-          "content": {
-            "application/json": {
-              "schema": {"$ref": "#/components/schemas/QuoteRequest"}
-            }
-          }
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QuoteRequest" } } }
         },
         "responses": {
-          "200": {
-            "description": "Execution result",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ExecuteResponse"}
-              }
-            }
-          }
+          "200": { "description": "Execution result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ExecuteResponse" } } } },
+          "400": { "description": "Invalid request" }
         }
       }
     },
     "/v1/cross-chain": {
       "post": {
-        "tags": ["Execution"],
         "summary": "Cross-chain execution",
-        "description": "Permissionless cross-chain execution with automatic routing."
+        "description": "Execute across ecosystems. Native asset settlement — no wrapping.",
+        "tags": ["Execution"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CrossChainRequest" },
+              "example": { "src_chain_id": 118, "dst_chain_id": 1, "amount": "1000000", "denom": "uatom", "destination": "0xYourAddress" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Execution result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ExecuteResponse" } } } }
+        }
       }
     },
     "/v1/register": {
       "post": {
-        "tags": ["Execution"],
         "summary": "Register for API key",
-        "description": "Self-service API key registration. Optional — execution is permissionless without a key. Keys enable attribution and higher rate limits."
+        "description": "Optional. Execution is permissionless without a key. Keys enable attribution and higher rate limits.",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "label": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "API key" } }
       }
     },
-    "/v1/signal/atoms": {
+    "/v1/health": {
       "get": {
-        "tags": ["Signals"],
-        "summary": "Real-time signal atoms",
-        "description": "Latest N signal atoms. Each atom contains: BLAKE3 hash commitment, sequence number, ecosystem, tier, pair index, deviation in basis points, entropy score, venue, prices, spread, liquidity, and nanosecond timestamp.",
-        "parameters": [
-          {
-            "name": "n",
-            "in": "query",
-            "description": "Number of atoms to return",
-            "schema": {"type": "integer", "default": 50, "maximum": 200}
-          },
-          {
-            "name": "since_seq",
-            "in": "query",
-            "description": "Return atoms after this sequence number",
-            "schema": {"type": "integer"}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Array of signal atoms",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "atoms": {
-                      "type": "array",
-                      "items": {"$ref": "#/components/schemas/SignalAtom"}
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+        "summary": "Liveness check",
+        "tags": ["Status"],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "example": { "ok": true, "status": "healthy" } } } } }
       }
     },
-    "/v1/signal/summary": {
+    "/v1/status": {
       "get": {
-        "tags": ["Signals"],
-        "summary": "Signal summary statistics",
-        "description": "Aggregate statistics over a rolling window: mean/median/p95 deviation, entropy distribution, chain coverage, pair coverage.",
-        "parameters": [
-          {
-            "name": "n",
-            "in": "query",
-            "description": "Window size in atoms",
-            "schema": {"type": "integer", "default": 1000}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Summary statistics"
-          }
-        }
+        "summary": "Protocol status and counters",
+        "tags": ["Status"],
+        "responses": { "200": { "description": "Status" } }
       }
     },
-    "/v1/signal/root": {
+    "/v1/signal": {
       "get": {
-        "tags": ["Signals"],
-        "summary": "Rolling Merkle root",
-        "description": "Current rolling BLAKE3 Merkle root of all signal atoms. Cryptographically verifiable against individual atom proofs.",
-        "responses": {
-          "200": {
-            "description": "Merkle root"
-          }
-        }
+        "summary": "Real-time signal data",
+        "tags": ["Signal"],
+        "responses": { "200": { "description": "Signal atoms" } }
       }
     },
-    "/v1/bots/schema": {
+    "/.well-known/nanostack.json": {
       "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Full typed schema",
-        "description": "Complete machine-readable schema with typed fields. Every field includes type, format, constraints, and description. Designed for automated parser generation.",
-        "responses": {
-          "200": {
-            "description": "Schema JSON"
-          }
-        }
-      }
-    },
-    "/v1/bots/ecosystems": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Per-ecosystem execution configs",
-        "description": "6 ecosystems (evm, solana, cosmos, utxo, xrpl, move) with address formats, signing algorithms, gas models, finality rules, chain lists, and per-ecosystem execute field requirements.",
-        "responses": {
-          "200": {
-            "description": "Ecosystem configs"
-          }
-        }
-      }
-    },
-    "/v1/bots/pairs": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Tradeable pairs",
-        "description": "50 tradeable pairs across all ecosystems with base/quote tokens, ecosystem, and chain_id.",
-        "responses": {
-          "200": {
-            "description": "Pairs array"
-          }
-        }
-      }
-    },
-    "/v1/bots/signals": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Signal endpoint discovery",
-        "description": "Complete map of all signal endpoints, auth requirements, and data formats. Follow this to discover the full signal API.",
-        "responses": {
-          "200": {
-            "description": "Endpoint map"
-          }
-        }
-      }
-    },
-    "/v1/bots/capabilities": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Protocol capabilities"
-      }
-    },
-    "/v1/bots/schema_hash": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Schema integrity hash",
-        "description": "BLAKE3 hash of current schema. Use to detect schema changes without re-fetching."
-      }
-    },
-    "/v1/bots/telemetry_frame_schema": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Telemetry frame schema"
-      }
-    },
-    "/v1/bots/integrity": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Market integrity policy"
-      }
-    },
-    "/v1/bots/reorg_semantics": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "Reorg handling semantics"
-      }
-    },
-    "/v1/bots/verifier": {
-      "get": {
-        "tags": ["Bot Integration"],
-        "summary": "External verifier spec"
-      }
-    },
-    "/v1/telemetry/head": {
-      "get": {
-        "tags": ["Telemetry"],
-        "summary": "Latest telemetry frames",
-        "parameters": [
-          {
-            "name": "n",
-            "in": "query",
-            "schema": {"type": "integer", "default": 10, "maximum": 100}
-          }
-        ]
-      }
-    },
-    "/v1/telemetry/range": {
-      "get": {
-        "tags": ["Telemetry"],
-        "summary": "Telemetry frames by time range",
-        "parameters": [
-          {"name": "from", "in": "query", "required": true, "schema": {"type": "integer"}},
-          {"name": "to", "in": "query", "schema": {"type": "integer"}}
-        ]
-      }
-    },
-    "/v1/telemetry/proof_snapshot": {
-      "get": {
-        "tags": ["Telemetry"],
-        "summary": "Settlement proofs with cryptographic roots"
-      }
-    },
-    "/v1/integrations": {
-      "get": {
+        "summary": "Full protocol manifest",
+        "description": "Machine-readable manifest: all chains, fee model, request schemas, address formats.",
         "tags": ["Discovery"],
-        "summary": "Aggregator integration specs",
-        "description": "Integration specs for Li.Fi, Socket, 1inch, ParaSwap, 0x, Odos, Jupiter, Raydium, and CoW Swap."
-      }
-    },
-    "/cow/solve": {
-      "post": {
-        "tags": ["Execution"],
-        "summary": "CoW Protocol solver",
-        "description": "Implements CoW Protocol solver engine API. Receives batch auction with orders, returns optimized settlement solution."
-      }
-    },
-    "/health": {
-      "get": {
-        "tags": ["Discovery"],
-        "summary": "Health check"
-      }
-    },
-    "/tokens": {
-      "get": {
-        "tags": ["Discovery"],
-        "summary": "Supported tokens"
-      }
-    },
-    "/metrics": {
-      "get": {
-        "tags": ["Telemetry"],
-        "summary": "Prometheus-format metrics"
+        "responses": { "200": { "description": "Protocol manifest" } }
       }
     }
   },
   "components": {
     "schemas": {
-      "SignalAtom": {
-        "type": "object",
-        "description": "64-byte cache-line-aligned signal atom with BLAKE3 commitment",
-        "properties": {
-          "hash": {"type": "string", "description": "BLAKE3 commitment (64 hex chars)"},
-          "seq": {"type": "integer", "format": "uint64", "description": "Monotonic sequence number"},
-          "ecosystem": {"type": "integer", "format": "uint16", "description": "0=evm, 1=solana, 2=cosmos, 3=utxo, 4=xrpl, 5=move"},
-          "tier": {"type": "integer", "format": "uint16", "description": "Signal tier"},
-          "pair": {"type": "integer", "format": "uint16", "description": "Asset pair index (resolve via /v1/bots/pairs)"},
-          "flags": {"type": "integer", "format": "uint16", "description": "Bitfield flags"},
-          "deviation_bps": {"type": "integer", "format": "int32", "description": "Signed basis points deviation from reference price"},
-          "entropy_score": {"type": "integer", "format": "uint32", "description": "Entropy score (full u32 range)"},
-          "venue": {"type": "string", "description": "Source venue identifier"},
-          "price": {"type": "string", "description": "Observed price (decimal string)"},
-          "reference_price": {"type": "string", "description": "Reference price (decimal string)"},
-          "spread_bps": {"type": "integer", "format": "int32", "description": "Bid-ask spread in basis points"},
-          "liquidity_usd": {"type": "integer", "format": "uint64", "description": "Estimated depth in USD"},
-          "base_token": {"type": "string", "description": "Base token symbol"},
-          "quote_token": {"type": "string", "description": "Quote token symbol"},
-          "chain_id": {"type": "integer", "format": "uint64", "description": "Chain identifier"},
-          "timestamp_ns": {"type": "integer", "format": "uint64", "description": "Unix nanosecond timestamp"}
-        }
-      },
       "QuoteRequest": {
         "type": "object",
         "required": ["chain_id", "amount", "destination"],
         "properties": {
-          "chain_id": {"type": "integer", "format": "uint64", "description": "Target chain ID"},
-          "amount": {"type": "string", "description": "Amount in smallest unit (wei, satoshi, lamport)"},
-          "destination": {"type": "string", "description": "Chain-native destination address"},
-          "source": {"type": "string", "description": "Source address (optional)"},
-          "intent": {"type": "string", "enum": ["execute", "quote"], "default": "execute"},
-          "quote_id": {"type": "string", "description": "Lock a prior quote for execution"}
+          "chain_id": { "type": "integer", "format": "uint64", "description": "Target chain ID" },
+          "amount": { "type": "string", "description": "Amount in smallest unit (wei, satoshi, lamport, uatom, drops)" },
+          "destination": { "type": "string", "description": "Chain-native destination address" },
+          "source": { "type": "string", "description": "Source address (optional)" },
+          "intent": { "type": "string", "enum": ["execute", "quote"], "default": "execute" },
+          "quote_id": { "type": "string", "description": "Lock a prior quote for execution" },
+          "token_address": { "type": "string", "description": "EVM ERC20 token address" },
+          "token_mint": { "type": "string", "description": "Solana SPL token mint (base58)" },
+          "denom": { "type": "string", "description": "Cosmos denom (e.g. uatom)" },
+          "memo": { "type": "string", "description": "Cosmos memo — required for exchange deposits" },
+          "destination_tag": { "type": "integer", "description": "XRP destination tag — required for exchange deposits" },
+          "fee_rate": { "type": "integer", "description": "BTC fee rate in sat/vbyte" },
+          "coin_type": { "type": "string", "description": "Move (APT/SUI) fully qualified coin type" }
+        }
+      },
+      "CrossChainRequest": {
+        "type": "object",
+        "required": ["src_chain_id", "dst_chain_id", "amount", "destination"],
+        "properties": {
+          "src_chain_id": { "type": "integer", "format": "uint64" },
+          "dst_chain_id": { "type": "integer", "format": "uint64" },
+          "amount": { "type": "string" },
+          "destination": { "type": "string" },
+          "denom": { "type": "string", "description": "Cosmos source denom" },
+          "memo": { "type": "string" }
         }
       },
       "QuoteResponse": {
         "type": "object",
         "properties": {
-          "quote_id": {"type": "string"},
-          "chain_id": {"type": "integer"},
-          "amount": {"type": "string"},
-          "fee_bps": {"type": "integer", "description": "Fee in basis points (8-15)"},
-          "fee_amount": {"type": "string", "description": "Absolute fee in smallest unit"},
-          "net_amount": {"type": "string", "description": "Amount after fee deduction"},
-          "expires_at": {"type": "string", "format": "date-time"},
-          "ecosystem": {"type": "string", "enum": ["evm", "solana", "cosmos", "utxo", "xrpl", "move"]},
-          "address_format": {"type": "string"},
-          "permissionless": {"type": "boolean"}
+          "ok": { "type": "boolean" },
+          "quote_id": { "type": "string" },
+          "fee_bps": { "type": "integer" },
+          "fee_amount": { "type": "string" },
+          "net_amount": { "type": "string" },
+          "expires_at": { "type": "integer", "description": "Unix timestamp" }
         }
       },
       "ExecuteResponse": {
         "type": "object",
         "properties": {
-          "tx_hash": {"type": "string", "description": "Chain-native transaction hash"},
-          "chain_id": {"type": "integer"},
-          "status": {"type": "string", "enum": ["submitted", "confirmed", "failed"]},
-          "fee_bps": {"type": "integer"},
-          "net_amount": {"type": "string"},
-          "settlement_proof": {"type": "string", "description": "SubZero 2477 settlement proof hash"}
-        }
-      },
-      "ChainIds": {
-        "type": "object",
-        "description": "All 59 supported chain IDs",
-        "properties": {
-          "ETH": {"type": "integer", "const": 1},
-          "BASE": {"type": "integer", "const": 8453},
-          "ARB": {"type": "integer", "const": 42161},
-          "OP": {"type": "integer", "const": 10},
-          "POLY": {"type": "integer", "const": 137},
-          "BNB": {"type": "integer", "const": 56},
-          "AVAX": {"type": "integer", "const": 43114},
-          "SOL": {"type": "integer", "const": 501},
-          "BTC": {"type": "integer", "const": 0},
-          "ATOM": {"type": "integer", "const": 118},
-          "APT": {"type": "integer", "const": 637},
-          "SUI": {"type": "integer", "const": 784},
-          "SUBZERO": {"type": "integer", "const": 2477}
+          "ok": { "type": "boolean" },
+          "tx_hash": { "type": "string" },
+          "proof": { "type": "string", "description": "BLAKE3 conservation proof" },
+          "fee_bps": { "type": "integer" },
+          "fee_amount": { "type": "string" }
         }
       }
     }
